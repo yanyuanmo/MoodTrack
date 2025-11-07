@@ -8,9 +8,9 @@ import TrendsPage from "./pages/TrendsPage";
 function App() {
   return (
     <Router>
-      <div className="app">
+      <div className="min-h-screen flex flex-col">
         <Header />
-        <main id="main" className="main" tabIndex="-1">
+        <main id="main" className="flex-1" tabIndex="-1">
           <Routes>
             <Route path="/" element={<Navigate to="/auth" />} />
             <Route path="/auth" element={<AuthPage />} />
