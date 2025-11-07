@@ -1,6 +1,6 @@
 function HomePage(){
     return (
-        <p>HomePage</p>
+        <p>This is HomePage</p>
     )
 }
 

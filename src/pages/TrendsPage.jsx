@@ -1,6 +1,6 @@
 function TrendsPage(){
     return (
-        <p>TrendsPage</p>
+        <p>This is TrendsPage</p>
     )
 }
 
