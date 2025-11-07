@@ -10,7 +10,7 @@ function App() {
     <Router>
       <div className="min-h-screen flex flex-col bg-gray-50">
         <Header />
-        <main id="main" className="flex-1 w-full max-w-7xl mx-auto px-2 sm:px-3 py-2" tabIndex="-1">
+        <main id="main" className="flex-1 px-2 sm:px-3 py-2" tabIndex="-1">
           <Routes>
             <Route path="/" element={<Navigate to="/auth" />} />
             <Route path="/auth" element={<AuthPage />} />
