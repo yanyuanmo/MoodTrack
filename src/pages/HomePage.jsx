@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 function HomePage() {
   // 状态管理
   const [selectedMood, setSelectedMood] = useState('');
   const [note, setNote] = useState('');
   const [recentRecords, setRecentRecords] = useState([
-    { date: 'Oct 25', mood: '😊 Happy', note: 'Had a great lunch!' }
+    { id: Date.now(), date: 'Oct 25', mood: '😊 Happy', note: 'Had a great lunch!' }
   ]);
+  const recordsRef = useRef(null);
+  const inputRef = useRef(null);
 
   // submitState 控制提交按钮的动画与显示内容
   // 'idle'   - 空闲状态，显示 "Submit"
@@ -34,7 +36,7 @@ function HomePage() {
       return;
     }
 
-    // 进入加载状态（显示spinner）
+    // 进入加载状态（显示 spinner）
     setSubmitState('loading');
 
   
@@ -42,22 +44,85 @@ function HomePage() {
       // 显示成功状态（对勾）
       setSubmitState('success');
 
-      // 短暂延迟后保存记录并重置界面
-      setTimeout(() => {
-        const newRecord = {
-          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          mood: selectedMood,
-          note: note
-        };
+      // 准备新记录（带唯一 id）
+      const newRecord = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        mood: selectedMood,
+        note: note
+      };
 
-        setRecentRecords([newRecord, ...recentRecords].slice(0, 3));
-        setSelectedMood('');
-        setNote('');
+      // 使用 FLIP 动画插入新记录（函数在下方）
+      flipInsert(newRecord);
 
-        // 恢复到空闲状态，允许再次提交
-        setSubmitState('idle');
-      }, 900);
+      // 清空输入
+      setSelectedMood('');
+      setNote('');
+
+      // 在短暂延时后回到空闲
+      setTimeout(() => setSubmitState('idle'), 1000);
     }, 900);
+  };
+
+  // FLIP 插入：平滑将新卡片从输入区滑入，同时旧卡片顺滑下移
+  const flipInsert = (newRecord) => {
+    const container = recordsRef.current;
+    if (!container) {
+      setRecentRecords((prev) => [newRecord, ...prev].slice(0, 3));
+      return;
+    }
+
+    // 记录插入前每个项目的位置
+    const firstRects = new Map();
+    container.querySelectorAll('[data-id]').forEach((node) => {
+      const id = node.getAttribute('data-id');
+      firstRects.set(id, node.getBoundingClientRect());
+    });
+
+    // 更新数据（新项目插到最前）
+    setRecentRecords((prev) => [newRecord, ...prev].slice(0, 3));
+
+    // 下一帧：计算反向位移并应用，然后触发过渡
+    requestAnimationFrame(() => {
+      const inputRect = inputRef.current ? inputRef.current.getBoundingClientRect() : null;
+
+      container.querySelectorAll('[data-id]').forEach((node) => {
+        const id = node.getAttribute('data-id');
+        const first = firstRects.get(id);
+        const last = node.getBoundingClientRect();
+
+        let invertY = 0;
+        if (first) {
+          invertY = first.top - last.top;
+        } else if (inputRect) {
+          // 新节点：从输入区域位置开始显示
+          invertY = inputRect.top - last.top;
+          node.style.opacity = '0';
+        }
+
+        node.style.transform = `translateY(${invertY}px)`;
+        node.style.willChange = 'transform, opacity';
+      });
+
+      // force reflow
+      // eslint-disable-next-line no-unused-expressions
+      container.offsetHeight;
+
+      // 播放过渡：移除 transform 以让元素平滑回到自然位置
+      container.querySelectorAll('[data-id]').forEach((node) => {
+        node.style.transition = 'transform 420ms cubic-bezier(.2,.9,.2,1), opacity 320ms';
+        node.style.transform = '';
+        node.style.opacity = '1';
+
+        const cleanup = (e) => {
+          if (e && e.propertyName !== 'transform') return;
+          node.style.transition = '';
+          node.style.willChange = '';
+          node.removeEventListener('transitionend', cleanup);
+        };
+        node.addEventListener('transitionend', cleanup);
+      });
+    });
   };
 
   return (
@@ -109,6 +174,7 @@ function HomePage() {
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
+              ref={inputRef}
               placeholder="What's on your mind?"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               rows="3"
@@ -158,10 +224,11 @@ function HomePage() {
           {recentRecords.length === 0 ? (
             <p className="text-gray-500 text-center py-4">No records yet</p>
           ) : (
-            <div className="space-y-3">
-              {recentRecords.map((record, index) => (
+            <div className="space-y-3" ref={recordsRef}>
+              {recentRecords.map((record) => (
                 <div
-                  key={index}
+                  key={record.id}
+                  data-id={record.id}
                   className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
                 >
                   <span className="text-sm text-gray-600">📅 {record.date}</span> |
