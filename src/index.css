@@ -1,3 +1,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes emoji-bounce {
+	0%, 100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-8px);
+	}
+}
+
+.mood-btn:hover .emoji-bounce-hover {
+	animation: emoji-bounce 0.6s;
+	will-change: transform;
+}

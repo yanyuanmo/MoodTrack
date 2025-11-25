@@ -71,13 +71,13 @@ function HomePage() {
               <button
                 key={mood.label}
                 onClick={() => setSelectedMood(`${mood.emoji} ${mood.label}`)}
-                className={`px-4 py-2 rounded-lg border-2 transition ${
+                className={`mood-btn px-4 py-2 rounded-lg border-2 transition ${
                   selectedMood === `${mood.emoji} ${mood.label}`
                     ? 'border-purple-600 bg-purple-50'
                     : 'border-gray-300 hover:border-purple-400'
                 }`}
               >
-                <span className="text-2xl mr-2">{mood.emoji}</span>
+                <span className="text-2xl mr-2 emoji-bounce-hover inline-block">{mood.emoji}</span>
                 <span className="text-sm font-medium">{mood.label}</span>
               </button>
             ))}
