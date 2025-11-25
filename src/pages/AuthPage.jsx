@@ -41,11 +41,11 @@ function AuthPage(){
 
     return (
         <div className="min-h-screen flex justify-center bg-gray-50 p-3">
-            <div className="w-full max-w-md sm:max-w-lg md:max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl bg-white shadow rounded px-6 py-5 sm:px-10 sm:pt-10 sm:pb-6 lg:px-12 lg:pt-12 lg:pb-8"
+            <div className="w-full max-w-md sm:max-w-lg md:max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl bg-white shadow rounded px-6 py-5 sm:px-10 sm:pt-10 sm:pb-6 lg:px-12 lg:pt-12 lg:pb-8 overflow-visible"
                  style={{ fontFamily: '"Comic Sans MS","Nunito","Quicksand","Poppins",cursive' }}>
                 <h1
-                    className="text-4xl md:text-5xl mb-6 text-center font-extrabold bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-500 text-transparent bg-clip-text drop-shadow-sm"
-                    style={{ fontFamily: '"Comic Sans MS","Nunito","Quicksand","Poppins",cursive' }}
+                    className="text-4xl md:text-5xl mb-6 text-center font-extrabold bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-500 text-transparent bg-clip-text drop-shadow-sm relative z-10 leading-[1.25] pb-2 w-full"
+                    style={{ fontFamily: '"Comic Sans MS","Nunito","Quicksand","Poppins",cursive', lineHeight: '1.25' }}
                 >
                     {mode === "login" ? "Login" : "Create Account"}
                 </h1>
