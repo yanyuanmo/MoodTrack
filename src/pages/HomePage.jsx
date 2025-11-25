@@ -68,7 +68,7 @@ function HomePage() {
   const flipInsert = (newRecord) => {
     const container = recordsRef.current;
     if (!container) {
-      setRecentRecords((prev) => [newRecord, ...prev].slice(0, 3));
+      setRecentRecords((prev) => [newRecord, ...prev].slice(0, 5));
       return;
     }
 
@@ -80,7 +80,7 @@ function HomePage() {
     });
 
     // 更新数据（新项目插到最前）
-    setRecentRecords((prev) => [newRecord, ...prev].slice(0, 3));
+    setRecentRecords((prev) => [newRecord, ...prev].slice(0, 5));
 
     // 下一帧：计算反向位移并应用，然后触发过渡
     requestAnimationFrame(() => {
