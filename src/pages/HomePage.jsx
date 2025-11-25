@@ -1,12 +1,19 @@
 import { useState, useRef } from 'react';
 
 function HomePage() {
+  
   // 状态管理
   const [selectedMood, setSelectedMood] = useState('');
   const [note, setNote] = useState('');
+
+  // 使用系统/浏览器的本地短日期 + 短时间格式
+  // 例如在 en-US 上通常显示为 "11/25/2025, 2:35 PM"，在其他地区会使用相应本地格式
+  const formatDateTime = (d = new Date()) =>
+    d.toLocaleString(undefined, { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   const [recentRecords, setRecentRecords] = useState([
-    { id: Date.now(), date: 'Oct 25', mood: '😊 Happy', note: 'Had a great lunch!' }
+    { id: Date.now(), date: formatDateTime(), mood: '😊 Happy', note: 'Had a great lunch!' }
   ]);
+
   const recordsRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -47,7 +54,7 @@ function HomePage() {
       // 准备新记录（带唯一 id）
       const newRecord = {
         id: Date.now(),
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        date: formatDateTime(),
         mood: selectedMood,
         note: note
       };
