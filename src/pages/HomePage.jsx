@@ -9,13 +9,17 @@ function HomePage() {
   ]);
 
   // 心情选项
-  const moods = [
-    { emoji: '😊', label: 'Happy' },
-    { emoji: '😢', label: 'Sad' },
-    { emoji: '😠', label: 'Angry' },
-    { emoji: '😰', label: 'Anxious' },
-    { emoji: '😌', label: 'Calm' }
-  ];
+    const moods = [
+      { emoji: '😊', label: 'Happy' },
+      { emoji: '😃', label: 'Excited' },
+      { emoji: '😎', label: 'Confident' },
+      { emoji: '😌', label: 'Calm' },
+      { emoji: '😢', label: 'Sad' },
+      { emoji: '😠', label: 'Angry' },
+      { emoji: '😫', label: 'Stressed' },
+      { emoji: '😰', label: 'Anxious' }, 
+      // { emoji: '😐', label: 'Neutral' } 
+    ];
 
   // 提交表单
   const handleSubmit = () => {
@@ -62,7 +66,7 @@ function HomePage() {
             How are you feeling today?
           </h2>
           
-          <div className="flex gap-3 mb-6 flex-wrap">
+          <div className="flex flex-wrap justify-center gap-3 mb-6">
             {moods.map((mood) => (
               <button
                 key={mood.label}
