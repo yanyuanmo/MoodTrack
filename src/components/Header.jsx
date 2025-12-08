@@ -3,18 +3,27 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 
 export default function Header() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [userEmail, setUserEmail] = useState('');
     const location = useLocation();
     const navigate = useNavigate();
     
     useEffect(() => {
-        const logged = true; // test:true delete later
-        // const logged = localStorage.getItem("isLoggedIn") === "true"; 
+        const logged = localStorage.getItem("isLoggedIn") === "true"; 
         setIsLoggedIn(logged);
+        
+        
+        if (logged) {
+            const email = localStorage.getItem('userEmail');
+            setUserEmail(email || '');
+        }
     }, [location]);
     
     const handleLogout = () => {
         localStorage.removeItem("isLoggedIn");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("userEmail");
         setIsLoggedIn(false);
+        setUserEmail('');
         navigate("/auth");
     };
     
@@ -35,7 +44,7 @@ export default function Header() {
                     </div>
                     
                     {!isAuthPage && isLoggedIn && (
-                        <nav className="hidden sm:flex space-x-8">
+                        <nav className="hidden sm:flex items-center space-x-8">
                             <Link 
                                 to="/home" 
                                 className={`text-sm font-medium transition-colors ${
@@ -62,12 +71,18 @@ export default function Header() {
                     )}
                     
                     {!isAuthPage && isLoggedIn && (
-                        <button 
-                            onClick={handleLogout}
-                            className="text-sm font-medium text-gray-700 hover:text-red-600 transition-colors px-4 py-2 rounded-md hover:bg-red-50"
-                        >
-                            Logout
-                        </button>
+                        <div className="flex items-center space-x-4">
+                           
+                            <span className="text-sm text-gray-600 hidden sm:inline">
+                                {userEmail}
+                            </span>
+                            <button 
+                                onClick={handleLogout}
+                                className="text-sm font-medium text-gray-700 hover:text-red-600 transition-colors px-4 py-2 rounded-md hover:bg-red-50"
+                            >
+                                Logout
+                            </button>
+                        </div>
                     )}
                     
                     {(isAuthPage || !isLoggedIn) && (
@@ -75,37 +90,44 @@ export default function Header() {
                     )}
                 </div>
                 
+               
                 {!isAuthPage && isLoggedIn && (
-                    <nav className="sm:hidden pb-3 flex justify-center space-x-6">
-                        <Link 
-                            to="/home" 
-                            className={`text-sm ${
-                                location.pathname === '/home' 
-                                    ? 'text-blue-600 font-bold' 
-                                    : 'text-gray-700'
-                            }`}
-                            style={{ textDecoration: 'none' }}
-                        >
-                            Home
-                        </Link>
-                        <Link 
-                            to="/trends" 
-                            className={`text-sm ${
-                                location.pathname === '/trends' 
-                                    ? 'text-blue-600 font-bold' 
-                                    : 'text-gray-700'
-                            }`}
-                            style={{ textDecoration: 'none' }}
-                        >
-                            Trends
-                        </Link>
-                        <button 
-                            onClick={handleLogout}
-                            className="text-sm font-medium text-red-600"
-                        >
-                            Logout
-                        </button>
-                    </nav>
+                    <div className="sm:hidden pb-3">
+                       
+                        <div className="text-center text-sm text-gray-600 mb-2">
+                            {userEmail}
+                        </div>
+                        <nav className="flex justify-center space-x-6">
+                            <Link 
+                                to="/home" 
+                                className={`text-sm ${
+                                    location.pathname === '/home' 
+                                        ? 'text-blue-600 font-bold' 
+                                        : 'text-gray-700'
+                                }`}
+                                style={{ textDecoration: 'none' }}
+                            >
+                                Home
+                            </Link>
+                            <Link 
+                                to="/trends" 
+                                className={`text-sm ${
+                                    location.pathname === '/trends' 
+                                        ? 'text-blue-600 font-bold' 
+                                        : 'text-gray-700'
+                                }`}
+                                style={{ textDecoration: 'none' }}
+                            >
+                                Trends
+                            </Link>
+                            <button 
+                                onClick={handleLogout}
+                                className="text-sm font-medium text-red-600"
+                            >
+                                Logout
+                            </button>
+                        </nav>
+                    </div>
                 )}
             </div>
         </header>
