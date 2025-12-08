@@ -35,7 +35,7 @@ export const handler = async (event) => {
         const now = new Date();
         const timestamp = now.getTime();
         
-        // 格式化日期为 "MM-DD" 格式
+       
         const month = (now.getMonth() + 1).toString().padStart(2, '0');
         const day = now.getDate().toString().padStart(2, '0');
         const dateStr = `${month}-${day}`;
@@ -45,9 +45,9 @@ export const handler = async (event) => {
             Item: {
                 UserID: userId,
                 timestamp: timestamp,
-                date: dateStr,  // "01-01" 格式
-                mood: mood,      // 数字 1-5
-                moodText: moodText || '',  // "Happy", "Calm" 等
+                date: dateStr,  
+                mood: mood,       
+                moodText: moodText || '',  
                 note: note
             }
         };
