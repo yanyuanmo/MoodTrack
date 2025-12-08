@@ -1,95 +1,180 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const API_BASE_URL = 'https://0bwf1p5coc.execute-api.us-east-1.amazonaws.com/prod';
 
 function HomePage() {
+  const navigate = useNavigate();
   
-  // 状态管理
-  const [selectedMood, setSelectedMood] = useState('');
+  const [selectedMood, setSelectedMood] = useState(null);
   const [note, setNote] = useState('');
-
-  // 使用系统/浏览器的本地短日期 + 短时间格式
-  // 例如在 en-US 上通常显示为 "11/25/2025, 2:35 PM"，在其他地区会使用相应本地格式
-  const formatDateTime = (d = new Date()) =>
-    d.toLocaleString(undefined, { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  const [recentRecords, setRecentRecords] = useState([
-    { id: Date.now(), date: formatDateTime(), mood: '😊 Happy', note: 'Had a great lunch!' }
-  ]);
+  const [recentRecords, setRecentRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const recordsRef = useRef(null);
   const inputRef = useRef(null);
-
-  // submitState 控制提交按钮的动画与显示内容
-  // 'idle'   - 空闲状态，显示 "Submit"
-  // 'loading'- 加载中，显示 spinner（按钮宽度不变）
-  // 'success'- 成功，短暂显示对勾后恢复
   const [submitState, setSubmitState] = useState('idle');
 
-  // 心情选项
-    const moods = [
-      { emoji: '😊', label: 'Happy' },
-      // { emoji: '😃', label: 'Excited' },
-      // { emoji: '😎', label: 'Confident' },
-      { emoji: '😌', label: 'Calm' },
-      { emoji: '😢', label: 'Sad' },
-      { emoji: '😠', label: 'Angry' },
-      // { emoji: '😫', label: 'Stressed' },
-      { emoji: '😰', label: 'Anxious' }, 
-      // { emoji: '😐', label: 'Neutral' } 
-    ];
 
-  // 提交表单（带 loading->success 的视觉流程）
-  const handleSubmit = () => {
+  useEffect(() => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    if (!isLoggedIn) {
+      navigate('/');
+    } else {
+      fetchRecentMoods();
+    }
+  }, [navigate]);
+
+
+  const moodConfig = {
+    5: { emoji: '😊', label: 'Happy' },
+    4: { emoji: '😌', label: 'Calm' },
+    3: { emoji: '😰', label: 'Anxious' },
+    2: { emoji: '😠', label: 'Angry' },
+    1: { emoji: '😢', label: 'Sad' }
+  };
+
+  const fetchRecentMoods = async () => {
+    try {
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        setError('User not logged in');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/getmoods?userId=${userId}&limit=3`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch moods');
+      }
+
+      setRecentRecords(data.data);
+    } catch (err) {
+      console.error('Error fetching moods:', err);
+      setError('Failed to load recent moods');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
     if (!selectedMood || !note) {
       alert('Please select a mood and add a note!');
       return;
     }
 
-    // 进入加载状态（显示 spinner）
     setSubmitState('loading');
 
-  
-    setTimeout(() => {
-      // 显示成功状态（对勾）
-      setSubmitState('success');
+    try {
+      const userId = localStorage.getItem('userId');
+      
+      if (!userId) {
+        console.error('No userId found in localStorage');
+        alert('User not logged in. Please login again.');
+        navigate('/');
+        return;
+      }
+      
+      const selectedMoodConfig = moodConfig[selectedMood];
+      
 
-      // 准备新记录（带唯一 id）
-      const newRecord = {
-        id: Date.now(),
-        date: formatDateTime(),
-        mood: selectedMood,
+      const requestBody = {
+        userId: userId,
+        mood: selectedMood,  
+        moodText: selectedMoodConfig.label,  
         note: note
       };
+      
+      console.log('Submitting mood with data:', requestBody);
+      
+      const response = await fetch(`${API_BASE_URL}/submitmood`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
 
-      // 使用 FLIP 动画插入新记录（函数在下方）
+    
+      const contentType = response.headers.get("content-type");
+      let data;
+      
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        data = await response.json();
+      } else {
+        
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        throw new Error('Server returned non-JSON response');
+      }
+
+      console.log('API Response:', { status: response.status, data });
+
+      if (!response.ok) {
+        console.error('API Error:', data);
+        throw new Error(data.error || data.message || 'Failed to submit mood');
+      }
+
+      setSubmitState('success');
+
+      
+      const newRecord = {
+        id: data.data?.timestamp || Date.now(),
+        date: data.data?.date || new Date().toLocaleDateString(),
+        mood: data.data?.mood || selectedMood,  
+        moodText: data.data?.moodText || selectedMoodConfig.label,
+        note: data.data?.note || note
+      };
+
+  
       flipInsert(newRecord);
 
-      // 清空输入
-      setSelectedMood('');
+      setSelectedMood(null);
       setNote('');
 
-      // 在短暂延时后回到空闲
       setTimeout(() => setSubmitState('idle'), 1000);
-    }, 900);
+
+    } catch (err) {
+      console.error('Error submitting mood:', err);
+      
+     
+      let errorMessage = 'Failed to submit mood. ';
+      if (err.message) {
+        errorMessage += err.message;
+      } else {
+        errorMessage += 'Please check your connection and try again.';
+      }
+      
+      alert(errorMessage);
+      setSubmitState('idle');
+    }
   };
 
-  // FLIP 插入：平滑将新卡片从输入区滑入，同时旧卡片顺滑下移
+  
   const flipInsert = (newRecord) => {
     const container = recordsRef.current;
     if (!container) {
-      setRecentRecords((prev) => [newRecord, ...prev].slice(0, 5));
+      setRecentRecords((prev) => [newRecord, ...prev].slice(0, 3));
       return;
     }
 
-    // 记录插入前每个项目的位置
     const firstRects = new Map();
     container.querySelectorAll('[data-id]').forEach((node) => {
       const id = node.getAttribute('data-id');
       firstRects.set(id, node.getBoundingClientRect());
     });
 
-    // 更新数据（新项目插到最前）
-    setRecentRecords((prev) => [newRecord, ...prev].slice(0, 5));
+    setRecentRecords((prev) => [newRecord, ...prev].slice(0, 3));
 
-    // 下一帧：计算反向位移并应用，然后触发过渡
     requestAnimationFrame(() => {
       const inputRect = inputRef.current ? inputRef.current.getBoundingClientRect() : null;
 
@@ -102,7 +187,6 @@ function HomePage() {
         if (first) {
           invertY = first.top - last.top;
         } else if (inputRect) {
-          // 新节点：从输入区域位置开始显示
           invertY = inputRect.top - last.top;
           node.style.opacity = '0';
         }
@@ -115,7 +199,6 @@ function HomePage() {
       // eslint-disable-next-line no-unused-expressions
       container.offsetHeight;
 
-      // 播放过渡：移除 transform 以让元素平滑回到自然位置
       container.querySelectorAll('[data-id]').forEach((node) => {
         node.style.transition = 'transform 420ms cubic-bezier(.2,.9,.2,1), opacity 320ms';
         node.style.transform = '';
@@ -134,49 +217,31 @@ function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 顶部导航栏 */}
-      {/* <nav className="bg-white shadow-sm px-6 py-4 flex justify-between items-center">
-        <div className="flex gap-4">
-          <button className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
-            Home
-          </button>
-          <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
-            Trends
-          </button>
-        </div>
-        <button className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
-          Logout
-        </button>
-      </nav> */}
-
-      {/* 主要内容区域 */}
-      <div className="max-w-2xl mx-auto mt-8 p-6">
-        {/* 心情选择 */}
+      <div className="max-w-2xl mx-auto pt-8 p-6">
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             How are you feeling today?
           </h2>
           
           <div className="flex flex-wrap justify-center gap-3 mb-6">
-            {moods.map((mood) => (
+            {Object.entries(moodConfig).reverse().map(([value, config]) => (
               <button
-                key={mood.label}
-                onClick={() => setSelectedMood(`${mood.emoji} ${mood.label}`)}
-                /* 使用 group 以便子元素（emoji）在悬停时响应 */
+                key={value}
+                onClick={() => setSelectedMood(Number(value))}
                 className={`group px-4 py-2 rounded-lg border-2 transition ${
-                  selectedMood === `${mood.emoji} ${mood.label}`
+                  selectedMood === Number(value)
                     ? 'border-purple-600 bg-purple-50'
                     : 'border-gray-300 hover:border-purple-400'
                 }`}
               >
-                {/* emoji：使用 Tailwind 的 group-hover 实现微上移 */}
-                <span className="text-2xl mr-2 transform transition-transform duration-200 group-hover:-translate-y-1 inline-block">{mood.emoji}</span>
-                <span className="text-sm font-medium">{mood.label}</span>
+                <span className="text-2xl mr-2 transform transition-transform duration-200 group-hover:-translate-y-1 inline-block">
+                  {config.emoji}
+                </span>
+                <span className="text-sm font-medium">{config.label}</span>
               </button>
             ))}
           </div>
 
-          {/* 笔记输入 */}
           <div className="mb-4">
             <textarea
               value={note}
@@ -188,7 +253,6 @@ function HomePage() {
             />
           </div>
 
-          {/* 提交按钮 */}
           <button
             onClick={handleSubmit}
             disabled={submitState === 'loading'}
@@ -197,7 +261,6 @@ function HomePage() {
               submitState === 'loading' ? 'cursor-wait' : ''
             }`}
           >
-            {/* 主要文字：加载时绝对定位并隐藏，使 spinner 居中且不引起布局跳动 */}
             <span
               className={`transition-opacity duration-150 ${
                 submitState === 'loading'
@@ -208,41 +271,48 @@ function HomePage() {
               Submit
             </span>
 
-            {/* 加载指示：使用 Tailwind 的 animate-spin + border utilities */}
             {submitState === 'loading' && (
               <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" aria-hidden="true" />
             )}
 
-            {/* 对勾：使用 scale 和 opacity 过渡实现弹出效果 */}
             {submitState === 'success' && (
               <svg className="w-5 h-5 text-white opacity-100 transform scale-100 transition duration-200" viewBox="0 0 24 24" aria-hidden="true">
-                <polyline points="20 6 9 17 4 12" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             )}
           </button>
         </div>
 
-        {/* 最近记录 */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
-            Recent records
+            Recent records (Last 3)
           </h2>
           
-          {recentRecords.length === 0 ? (
+          {loading ? (
+            <p className="text-gray-500 text-center py-4">Loading...</p>
+          ) : error ? (
+            <p className="text-red-500 text-center py-4">{error}</p>
+          ) : recentRecords.length === 0 ? (
             <p className="text-gray-500 text-center py-4">No records yet</p>
           ) : (
             <div className="space-y-3" ref={recordsRef}>
-              {recentRecords.map((record) => (
-                <div
-                  key={record.id}
-                  data-id={record.id}
-                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
-                >
-                  <span className="text-sm text-gray-600">📅 {record.date}</span> |
-                  <span className="text-sm font-medium">{record.mood}</span> |
-                  <span className="text-sm text-gray-600">"{record.note}"</span>
-                </div>
-              ))}
+              {recentRecords.map((record) => {
+                const mood = moodConfig[record.mood] || { emoji: '❓', label: 'Unknown' };
+                return (
+                  <div
+                    key={record.id}
+                    data-id={record.id}
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                  >
+                    <span className="text-sm text-gray-600">📅 {record.date}</span>
+                    <span className="text-gray-400">|</span>
+                    <span className="text-lg">{mood.emoji}</span>
+                    <span className="text-sm font-medium">{mood.label}</span>
+                    <span className="text-gray-400">|</span>
+                    <span className="text-sm text-gray-600 italic">"{record.note}"</span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

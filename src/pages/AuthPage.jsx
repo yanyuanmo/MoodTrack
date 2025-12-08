@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE_URL = 'https://0bwf1p5coc.execute-api.us-east-1.amazonaws.com/prod';
+
 function AuthPage(){
     const navigate = useNavigate();
     const [email, setEmail] = useState("");
@@ -22,7 +24,7 @@ function AuthPage(){
         return "";
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         const v = validate();
         if (v) {
@@ -31,12 +33,39 @@ function AuthPage(){
         }
         setError("");
         setLoading(true);
-        // Simulate auth; replace with real API later
-        setTimeout(() => {
-            setLoading(false);
-            localStorage.setItem("isLoggedIn", "true"); // mark logged in
+
+        try {
+            const endpoint = mode === "login" ? "/login" : "/register";
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || `${mode === "login" ? "Login" : "Registration"} failed`);
+            }
+
+            // Store user info in localStorage
+            localStorage.setItem("isLoggedIn", "true");
+            localStorage.setItem("userId", data.userId);
+            localStorage.setItem("userEmail", email);
+            
+            // Navigate to home page
             navigate("/home");
-        }, 800);
+
+        } catch (err) {
+            setError(err.message || "An error occurred. Please try again.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -128,7 +157,7 @@ function AuthPage(){
                     </button>
                 </form>
                 <p className="mt-3 text-xs text-center text-pink-400">
-                    (Demo only — replace with real authentication later)
+                    Secure authentication powered by AWS
                 </p>
             </div>
         </div>
