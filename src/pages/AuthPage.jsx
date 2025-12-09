@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE_URL = 'https://0bwf1p5coc.execute-api.us-east-1.amazonaws.com/prod';
+const API_BASE_URL = 'https://747q893hm6.execute-api.us-east-1.amazonaws.com/prod';
 
 function AuthPage(){
     const navigate = useNavigate();

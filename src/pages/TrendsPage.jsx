@@ -11,7 +11,7 @@ import {
 } from "recharts";
 
 // Replace with your actual API Gateway endpoint
-const API_BASE_URL = 'https://0bwf1p5coc.execute-api.us-east-1.amazonaws.com/prod';
+const API_BASE_URL = 'https://747q893hm6.execute-api.us-east-1.amazonaws.com/prod';
 
 export default function TrendsPage() {
   const navigate = useNavigate();
